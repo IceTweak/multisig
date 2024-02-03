@@ -1,2 +1,5 @@
+# Forge artifacts
 cache/
 out/
+coverage/
+lcov.info

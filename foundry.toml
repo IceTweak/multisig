@@ -1,2 +1,7 @@
+[profile.default]
+solc_version = "0.8.20"
+optimizer = true
+optimizer_runs = 800
+
 [profile.ci.fuzz]
 runs = 10_000
