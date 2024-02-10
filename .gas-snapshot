@@ -1,1 +1,7 @@
-TestContract:testContractConstruct() (gas: 22798)
+TestContract:testDefaultContractConstruct() (gas: 22728)
+TestContract:testRevertDuplicateOwner() (gas: 165683)
+TestContract:testRevertEmptyOwners() (gas: 44241)
+TestContract:testRevertInvalidRequiredConfirms() (gas: 90189)
+TestContract:testRevertSendEtherWithData() (gas: 2035815)
+TestContract:testRevertZeroAddressOwner() (gas: 165471)
+TestContract:testSendEtherWithoutData() (gas: 19775)
