@@ -1,0 +1,13 @@
+{
+  "name": "multisig",
+  "version": "0.0.1",
+  "description": "MultiSignature Wallet",
+  "scripts": {
+    "build": "forge build --sizes",
+    "coverage": "pnpm build && forge coverage",
+    "coverage:html": "pnpm build && forge coverage --report lcov && genhtml lcov.info -o coverage --branch-coverage"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
