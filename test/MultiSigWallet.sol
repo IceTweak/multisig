@@ -6,15 +6,17 @@ import "forge-std/Test.sol";
 import "src/MultiSigWallet.sol";
 
 contract TestContract is Test {
-
     event Deposit(address indexed sender, uint256 amount, uint256 balance);
+    event SubmitTransaction(
+        address indexed owner, uint256 indexed txIndex, address indexed to, uint256 value, bytes data
+    );
 
-
-    MultiSigWallet wallet;
+    MultiSigWallet public wallet;
     address public constant HOLDER_1 = payable(address(1));
     address public constant HOLDER_2 = payable(address(2));
     address public constant HOLDER_3 = payable(address(3));
     address public constant HACKER = payable(address(4));
+    address public constant GUY = payable(address(5));
     address[] public HOLDERS = [HOLDER_1, HOLDER_2, HOLDER_3];
     address[] public HOLDERS_WITH_ZERO = [HOLDER_1, HOLDER_2, address(0)];
     address[] public HOLDERS_WITH_DUP = [HOLDER_1, HOLDER_2, HOLDER_2];
@@ -41,7 +43,7 @@ contract TestContract is Test {
         vm.expectRevert(ZeroAddressOwner.selector);
         wallet = wallet = new MultiSigWallet(HOLDERS_WITH_ZERO, REQUIRED_CONFIRMS);
     }
-    
+
     function testRevertDuplicateOwner() public {
         vm.expectRevert(DuplicateOwner.selector);
         wallet = wallet = new MultiSigWallet(HOLDERS_WITH_DUP, REQUIRED_CONFIRMS);
@@ -57,7 +59,7 @@ contract TestContract is Test {
         vm.startPrank(HOLDER_1);
         vm.expectEmit(address(wallet));
         emit Deposit(HOLDER_1, TEST_ETHER, TEST_ETHER);
-        (bool sent, ) = address(wallet).call{value: TEST_ETHER}("");
+        (bool sent,) = address(wallet).call{value: TEST_ETHER}("");
         require(sent, "Failed to send Ether");
         vm.stopPrank();
         assertEq(address(wallet).balance, TEST_ETHER);
@@ -75,5 +77,32 @@ contract TestContract is Test {
         assertEq(res, new bytes(8192));
         assertEq(address(wallet).balance, 0);
         assertEq(HOLDER_1.balance, TEST_ETHER);
+    }
+
+    function testRevertNotAnOwnerSubmitTransaction() public {
+        vm.expectRevert(NotAnOwner.selector);
+        vm.prank(HACKER);
+        wallet.submitTransaction(HACKER, TEST_ETHER, "");
+    }
+
+    function testSubmitTransaction() public {
+        uint256 txIndex = 0;
+        bytes memory testCall = abi.encodeCall(MultiSigWallet.getOwners, ());
+        MultiSigWallet.Transaction memory testTx = MultiSigWallet.Transaction(GUY, TEST_ETHER, testCall, false, 0);
+        vm.expectEmit(address(wallet));
+        emit SubmitTransaction(HOLDER_2, txIndex, GUY, TEST_ETHER, testCall);
+        vm.prank(HOLDER_2);
+        wallet.submitTransaction(GUY, TEST_ETHER, testCall);
+        (address guy, uint256 value, bytes memory data, bool isExecuted, uint256 confirms) =
+            wallet.getTransaction(txIndex);
+        MultiSigWallet.Transaction memory realTx = MultiSigWallet.Transaction(guy, value, data, isExecuted, confirms);
+        assertEq(abi.encode(realTx), abi.encode(testTx));
+        assertEq(wallet.getTransactionCount(), 1);
+    }
+
+    function testRevertNotAnOwnerConfirmTransaction() public {
+        vm.expectRevert(NotAnOwner.selector);
+        vm.prank(HACKER);
+        wallet.confirmTransaction(0);
     }
 }
